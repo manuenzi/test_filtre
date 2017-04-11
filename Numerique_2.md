@@ -1,26 +1,57 @@
-Stratégies et secteurs croissances sociétés ingénierie numériques 2
+Stratégies et secteurs de croissances pour les sociétés d'ingénierie : Numérique 2
 ================
 ENZI
 11/04/2017
 
-R Markdown
-----------
+Introduction
+------------
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+     [1] "articles"             "articles_bookmarks"   "keywords"            
+     [4] "keywords_articles"    "keywords_resultItems" "queries"             
+     [7] "resultItems"          "words"                "words_articles"      
+    [10] "words_resultItems"   
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+    Source:   query [?? x 9]
+    Database: sqlite 3.11.1 [Strategies_secteurs_croissance_societes_ingenierie_Numerique_2.db]
 
-``` r
-summary(cars)
-```
+          id id_query
+       <int>    <int>
+    1      2      161
+    2      3      161
+    3      4      161
+    4      5      161
+    5      6      161
+    6      7      154
+    7      8      154
+    8      9      154
+    9     10      154
+    10    11      153
+    # ... with more rows, and 7 more variables: title <chr>,
+    #   description <chr>, url <chr>, ranking <int>, hash <chr>, score <dbl>,
+    #   interest_lvl <int>
 
-    ##      speed           dist       
-    ##  Min.   : 4.0   Min.   :  2.00  
-    ##  1st Qu.:12.0   1st Qu.: 26.00  
-    ##  Median :15.0   Median : 36.00  
-    ##  Mean   :15.4   Mean   : 42.98  
-    ##  3rd Qu.:19.0   3rd Qu.: 56.00  
-    ##  Max.   :25.0   Max.   :120.00
+    # A tibble: 168 × 3
+                                         thesaurus1         thesaurus2
+                                              <chr>              <chr>
+    1                                  ingénierie     digitalisation  
+    2                  ingénierie en informatique     digitalisation  
+    3                       ingénierie financière     digitalisation  
+    4                     ingénierie industrielle     digitalisation  
+    5    ingénierie et de conseil en technologies     digitalisation  
+    6                    ingénierie et de conseil     digitalisation  
+    7                     ingénierie informatique     digitalisation  
+    8                                  ingénierie            digital  
+    9                  ingénierie en informatique            digital  
+    10                      ingénierie financière            digital  
+    # ... with 158 more rows, and 1 more variables: thesaurus3 <chr>
+
+         speed           dist       
+     Min.   : 4.0   Min.   :  2.00  
+     1st Qu.:12.0   1st Qu.: 26.00  
+     Median :15.0   Median : 36.00  
+     Mean   :15.4   Mean   : 42.98  
+     3rd Qu.:19.0   3rd Qu.: 56.00  
+     Max.   :25.0   Max.   :120.00  
 
 Including Plots
 ---------------

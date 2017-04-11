@@ -1,19 +1,86 @@
 ---
-title: "Stratégies et secteurs croissances sociétés ingénierie numériques 2"
+title: "Stratégies et secteurs de croissances pour les sociétés d'ingénierie : Numérique 2"
 author: "ENZI"
 date: "11/04/2017"
 output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, comment=NA)
 ```
 
-## R Markdown
+## Introduction
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r Packages, message=FALSE}
+library(tidyverse)
+library(tidytext)
+```
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r getting data}
+db <- src_sqlite("Strategies_secteurs_croissance_societes_ingenierie_Numerique_2.db", create = FALSE)
+db_list_tables(db$con)
+```
+
+```{r evaluated_resultItems}
+evaluated_resultItems <- tbl(db, 
+                             sql(
+                               "SELECT resit.*, art.score, art.interest_lvl FROM resultItems resit
+                               JOIN articles art ON resit.hash = art.hash"
+                               )
+                             )
+evaluated_resultItems
+```
+
+```{r queries}
+sepa <- "__S__"
+queries <- tbl(db, "queries") %>%
+  collect()
+```
+
+```{r}
+splitted_queries <- strsplit(queries$search, split = sepa) %>%
+  map(~gsub(.x, pattern = '\"',replacement = ''))
+
+searches_terms <- tibble(
+                          thesaurus1 = character(nrow(queries)),
+                          thesaurus2 = character(nrow(queries)),
+                          thesaurus3 = character(nrow(queries))
+                         )
+
+searches_terms$thesaurus1 <- map_chr(splitted_queries, ~ paste(" ", .x[[1]], " "))
+
+searches_terms$thesaurus2 <- map_chr(splitted_queries, ~ paste(" ", .x[[2]], " "))
+
+searches_terms$thesaurus3 <- map_chr(splitted_queries, ~ paste(" ", .x[[3]], " "))
+
+#searches_terms <- tibble(
+ #                         thesaurus1 = character(nrow(queries)),
+ #                         thesaurus2 = character(nrow(queries)),
+  #                        thesaurus3 = character(nrow(queries))
+   #                      )
+#assign(searches_terms$thesaurus1, map_chr(splitted_queries, ~ paste(" ", .x[[1]] %>%
+#                                          gsub(pattern = '\"',replacement = ''), 
+#                                        " ")
+#)
+#)
+#test <- map(searches_terms, ~ assign(.x, value = map_chr(splitted_queries, paste(" ", .x[[1]] %>%
+#                                                                                   gsub(pattern = '\"',replacement = ''),
+#                                                                                 " "
+ #                                                                                )
+   #                                                      )
+  #                                   )
+      #      )
+
+#test <- map(searches_terms, ~ .x) %>% assign(value = map_chr(splitted_queries, paste(" ", .x[[1]] %>%
+         #                                                                          gsub(pattern = '\"',replacement = ''),
+           #                                                                      " "
+             #                                                                    )
+                 #                                        )
+                    #                 )
+#searches_terms
+#splitted_queries
+searches_terms
+```
 
 ```{r cars}
 summary(cars)
