@@ -17,24 +17,19 @@ library(tidytext)
 ```
 
 ```{r getting data}
-db <- src_sqlite("Strategies_secteurs_croissance_societes_ingenierie_Numerique_2.db", create = FALSE)
-db_list_tables(db$con)
+csv_data <- read_csv("csv-thesaurus-matching/test_filter_Quelles_stratégies_et_secteurs_de_croissance_pour_les_sociétés_d_ingénierie_Numérique_2_20170412-114612.csv")
+csv_data
 ```
 
-```{r evaluated_resultItems}
-evaluated_resultItems <- tbl(db, 
-                             sql(
-                               "SELECT resit.*, art.score, art.interest_lvl FROM resultItems resit
-                               JOIN articles art ON resit.hash = art.hash"
-                               )
-                             )
-evaluated_resultItems
+```{r data processing}
+clean_csv_data <- mutate(csv_data, interest_lvl = as.factor(interest_lvl), nb_list_matched = as.factor(list_1 + list_2 + list_3), total_lists = 3, list_1 = as.logical(list_1), list_2 = as.logical(list_2), list_3 = as.logical(list_3))
+clean_csv_data
 ```
 
-```{r queries}
-sepa <- "__S__"
-queries <- tbl(db, "queries") %>%
-  collect()
+```{r summary data}
+filtered_data <- select(clean_csv_data, hash, interest_lvl, nb_list_matched)
+filtered_data %>%
+  ggplot(aes(x = interest_lvl, y = nb_list_matched, fill = interest_lvl)) + geom_col()
 ```
 
 ```{r}
