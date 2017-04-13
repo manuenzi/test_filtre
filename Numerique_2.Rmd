@@ -22,7 +22,9 @@ csv_data
 ```
 
 ```{r data processing}
-clean_csv_data <- mutate(csv_data, interest_lvl = as.factor(interest_lvl), nb_list_matched = as.factor(list_1 + list_2 + list_3), total_lists = 3, list_1 = as.logical(list_1), list_2 = as.logical(list_2), list_3 = as.logical(list_3))
+clean_csv_data <- csv_data %>%
+  filter(interest_lvl >= 0) %>%
+  mutate(interest_lvl = as.factor(interest_lvl), nb_list_matched = list_1 + list_2 + list_3, total_lists = 3, list_1 = as.logical(list_1), list_2 = as.logical(list_2), list_3 = as.logical(list_3))
 clean_csv_data
 ```
 
@@ -33,52 +35,13 @@ filtered_data %>%
 ```
 
 ```{r}
-splitted_queries <- strsplit(queries$search, split = sepa) %>%
-  map(~gsub(.x, pattern = '\"',replacement = ''))
-
-searches_terms <- tibble(
-                          thesaurus1 = character(nrow(queries)),
-                          thesaurus2 = character(nrow(queries)),
-                          thesaurus3 = character(nrow(queries))
-                         )
-
-searches_terms$thesaurus1 <- map_chr(splitted_queries, ~ paste(" ", .x[[1]], " "))
-
-searches_terms$thesaurus2 <- map_chr(splitted_queries, ~ paste(" ", .x[[2]], " "))
-
-searches_terms$thesaurus3 <- map_chr(splitted_queries, ~ paste(" ", .x[[3]], " "))
-
-#searches_terms <- tibble(
- #                         thesaurus1 = character(nrow(queries)),
- #                         thesaurus2 = character(nrow(queries)),
-  #                        thesaurus3 = character(nrow(queries))
-   #                      )
-#assign(searches_terms$thesaurus1, map_chr(splitted_queries, ~ paste(" ", .x[[1]] %>%
-#                                          gsub(pattern = '\"',replacement = ''), 
-#                                        " ")
-#)
-#)
-#test <- map(searches_terms, ~ assign(.x, value = map_chr(splitted_queries, paste(" ", .x[[1]] %>%
-#                                                                                   gsub(pattern = '\"',replacement = ''),
-#                                                                                 " "
- #                                                                                )
-   #                                                      )
-  #                                   )
-      #      )
-
-#test <- map(searches_terms, ~ .x) %>% assign(value = map_chr(splitted_queries, paste(" ", .x[[1]] %>%
-         #                                                                          gsub(pattern = '\"',replacement = ''),
-           #                                                                      " "
-             #                                                                    )
-                 #                                        )
-                    #                 )
-#searches_terms
-#splitted_queries
-searches_terms
+filtered_matched_data <- filter(filtered_data, nb_list_matched == 3)
+filtered_matched_data
 ```
 
 ```{r cars}
-summary(cars)
+filtered_matched_data %>%
+  ggplot(aes(x = interest_lvl, fill = interest_lvl)) + geom_bar()
 ```
 
 ## Including Plots
@@ -86,7 +49,7 @@ summary(cars)
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+summary(filtered_matched_data)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

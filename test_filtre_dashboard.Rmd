@@ -1,0 +1,67 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: row
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+```
+
+Column
+-----------------------------------------------------------------------
+
+### Articles matched  
+
+```{r}
+csv_data <- read_csv("csv-thesaurus-matching/test_filter_Quelles_stratégies_et_secteurs_de_croissance_pour_les_sociétés_d_ingénierie_Numérique_2_20170412-114612.csv")
+clean_csv_data <- csv_data %>%
+  filter(interest_lvl >= 0) %>%
+  mutate(interest_lvl = as.factor(interest_lvl), nb_list_matched = list_1 + list_2 + list_3, total_lists = 3, list_1 = as.logical(list_1), list_2 = as.logical(list_2), list_3 = as.logical(list_3))
+```
+
+```{r}
+valueBox(sum(clean_csv_data$nb_list_matched == 3), icon = "fa-comments")
+```
+
+### Articles liked 
+
+```{r}
+valueBox(sum(clean_csv_data$nb_list_matched == 3 & clean_csv_data$interest_lvl == 2), icon = "fa-comments")
+```
+
+### Articles unliked 
+
+```{r}
+valueBox(sum(clean_csv_data$nb_list_matched == 3 & clean_csv_data$interest_lvl == 0), icon = "fa-comments")
+```
+
+### Articles passed 
+
+```{r}
+valueBox(sum(clean_csv_data$nb_list_matched == 3 & clean_csv_data$interest_lvl == 1), icon = "fa-comments")
+```
+
+
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+filtered_data <- select(clean_csv_data, hash, interest_lvl, nb_list_matched)
+filtered_data %>%
+  ggplot(aes(x = interest_lvl, fill = interest_lvl)) + geom_bar() + xlab(NULL) + facet_wrap(~nb_list_matched)
+```
+
