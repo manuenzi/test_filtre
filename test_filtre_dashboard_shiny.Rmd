@@ -1,0 +1,455 @@
+---
+title: "Flexdashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+```
+
+```{r}
+csv_data <- read_csv("csv-thesaurus-matching/test_filter_Quelles_stratégies_et_secteurs_de_croissance_pour_les_sociétés_d_ingénierie_Numérique_2_20170412-114612.csv")
+clean_csv_data <- csv_data %>%
+  filter(interest_lvl >= 0) %>%
+  mutate(interest_lvl = as.factor(interest_lvl), nb_list_matched = list_1 + list_2 + list_3, total_lists = 3, list_1 = as.logical(list_1), list_2 = as.logical(list_2), list_3 = as.logical(list_3))
+```
+
+Numérique 2
+=========================================
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+radioButtons("nb_matched", label = "Select number of thesaurus to be matched", choiceValues = 1:(ncol(csv_data) - 2),
+             choiceNames = paste(1:(ncol(csv_data) - 2), "thesaurus out of", (ncol(csv_data) - 2)), selected = 1)
+```
+
+
+Row
+-----------------------------------------------------------------------
+### Articles retrieved
+
+```{r}
+renderValueBox(
+  valueBox(nrow(csv_data), icon = "fa-comments")
+)
+```
+
+
+### Matched articles
+
+```{r}
+matched_articles <- reactive(clean_csv_data %>%
+                             filter(nb_list_matched >= input$nb_matched))
+renderValueBox(
+  valueBox(nrow(matched_articles()), icon = "fa-comments")
+)
+```
+
+### Matched articles ratio
+
+```{r}
+matched_ratio <- reactive(round(100*nrow(matched_articles())/nrow(csv_data)))
+renderGauge(
+  gauge(matched_ratio(), min = 0, max = 100, symbol = "%", gaugeSectors(
+    succes = c(80, 100), warning = c(31, 79), danger = c(0, 30)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+### Articles matched  
+
+```{r}
+articles_matched <- reactive(clean_csv_data %>%
+                               filter(nb_list_matched >= input$nb_matched))
+renderValueBox(
+  valueBox(nrow(articles_matched()), icon = "fa-comments")
+)
+```
+
+### Matched articles liked 
+
+```{r}
+matched_articles_liked <- reactive(articles_matched() %>%
+                             filter(interest_lvl == 2))
+renderValueBox(
+  valueBox(nrow(matched_articles_liked()), icon = "fa-comments", color = "info")
+)
+```
+
+### Matched articles liked ratio
+
+```{r}
+matched_liked_ratio <- reactive(round(100*nrow(matched_articles_liked())/nrow(articles_matched())))
+renderGauge(
+  gauge(matched_liked_ratio(), min = 0, max = 100, symbol = "%", gaugeSectors(
+    success = c(51, 100), warning = c(11, 50), danger = c(0, 10)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+### Articles liked  
+
+```{r}
+articles_liked <- clean_csv_data %>%
+  filter(interest_lvl == 2)
+renderValueBox(
+  valueBox(nrow(articles_liked), icon = "fa-comments", color = "info")
+)
+```
+
+### Liked articles lost 
+
+```{r}
+liked_article_lost <- reactive(articles_liked %>% filter(nb_list_matched < input$nb_matched))
+renderValueBox(
+  valueBox(nrow(liked_article_lost()), icon = "fa-comments", color = "info")
+)
+```
+
+### Liked articles lost ratio 
+
+```{r}
+liked_lost_ratio <- reactive(round(100*nrow(liked_article_lost())/nrow(articles_liked)))
+renderGauge(
+  gauge(liked_lost_ratio(), min = 0, max = 100, symbol = "%", gaugeSectors(
+    danger = c(51, 100), warning = c(11, 50), succes = c(0, 10)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+
+```{r}
+renderPlot(
+  ggplot(clean_csv_data %>%
+           filter(nb_list_matched >= input$nb_matched), aes(x = interest_lvl, fill = interest_lvl)) + geom_bar() + theme_bw() +
+    theme(legend.position = "none") + ylab(NULL) + xlab("Niveau d'intérêt")
+)
+```
+
+Custom csv file
+==================================================
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+br()
+fileInput("mydata", "Please load some valide csv file", accept = "csv")
+
+custom_csv_data <- reactive({
+    infile <- input$mydata
+    if (is.null(infile)) {
+      # User has not uploaded a file yet
+      return(NULL)
+    }
+    read_csv(infile$datapath)
+  })
+
+```
+
+```{r}
+renderUI({
+  val <- ifelse(is.null(ncol(custom_csv_data())), 1, ncol(custom_csv_data()) - 2)
+  tagList(radioButtons("custom_nb_matched", label = "Select number of thesaurus to be matched", choiceValues = 1:val, choiceNames = paste("At least", 1:val, "thesaurus matched out of", val)),
+          if(val>1){actionButton("go", "Analyze")})
+})
+```
+
+
+```{r, eval=TRUE}
+clean_custom_csv_data <- reactive(custom_csv_data() %>%
+                                  mutate(nb_list_matched = rowSums(.[-c(1,2)])) %>%
+  filter(interest_lvl >= 0) %>%
+  mutate(interest_lvl = as.factor(interest_lvl))
+)
+```
+
+Row
+-----------------------------------------------------------------------
+### Articles retrieved
+
+```{r}
+renderValueBox(
+  valueBox(nrow(custom_csv_data()), icon = "fa-comments")
+)
+```
+
+
+### Matched articles
+
+```{r}
+custom_matched_articles <- reactive(clean_custom_csv_data() %>%
+                             filter(nb_list_matched >= input$custom_nb_matched))
+renderValueBox(
+  valueBox(nrow(custom_matched_articles()), icon = "fa-comments")
+)
+```
+
+### Matched articles ratio
+
+```{r}
+custom_matched_ratio <- reactive(round(100*nrow(custom_matched_articles())/nrow(custom_csv_data())))
+renderGauge(
+  gauge(custom_matched_ratio(), min = 0, max = 100, symbol = "%", gaugeSectors(
+    succes = c(80, 100), warning = c(31, 79), danger = c(0, 30)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+### Articles matched  
+
+```{r}
+custom_articles_matched <- reactive(clean_custom_csv_data() %>%
+                               filter(nb_list_matched >= input$custom_nb_matched))
+renderValueBox(
+  valueBox(nrow(custom_articles_matched()), icon = "fa-comments")
+)
+```
+
+### Matched articles liked 
+
+```{r}
+custom_matched_articles_liked <- reactive(custom_articles_matched() %>%
+                             filter(interest_lvl == 2))
+renderValueBox(
+  valueBox(nrow(custom_matched_articles_liked()), icon = "fa-comments", color = "info")
+)
+```
+
+### Matched articles liked ratio
+
+```{r}
+custom_matched_liked_ratio <- reactive(round(100*nrow(custom_matched_articles_liked())/nrow(custom_articles_matched())))
+renderGauge(
+  gauge(custom_matched_liked_ratio(), min = 0, max = 100, symbol = "%", gaugeSectors(
+    success = c(51, 100), warning = c(11, 50), danger = c(0, 10)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+### Articles liked  
+
+```{r}
+custom_articles_liked <- reactive(clean_custom_csv_data() %>%
+  filter(interest_lvl == 2))
+renderValueBox(
+  valueBox(nrow(custom_articles_liked()), icon = "fa-comments", color = "info")
+)
+```
+
+### Liked articles lost 
+
+```{r}
+custom_liked_article_lost <- reactive(custom_articles_liked() %>% filter(nb_list_matched < input$custom_nb_matched))
+renderValueBox(
+  valueBox(nrow(custom_liked_article_lost()), icon = "fa-comments", color = "info")
+)
+```
+
+### Liked articles lost ratio 
+
+```{r}
+custom_liked_lost_ratio <- reactive(round(100*nrow(custom_liked_article_lost())/nrow(custom_articles_liked())))
+renderGauge(
+  gauge(custom_liked_lost_ratio(), min = 0, max = 100, symbol = "%", gaugeSectors(
+    danger = c(51, 100), warning = c(11, 50), succes = c(0, 10)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+
+```{r}
+renderPlot(
+  ggplot(clean_custom_csv_data() %>%
+           filter(nb_list_matched >= input$custom_nb_matched), aes(x = interest_lvl, fill = interest_lvl)) + geom_bar() + theme_bw() +
+    theme(legend.position = "none") + ylab(NULL) + xlab("Niveau d'intérêt")
+)
+```
+
+Summary
+==================================================
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+br()
+fileInput("mydatafull", "Please load some valide csv file", accept = "csv", multiple = TRUE)
+
+custom_csv_data_full <- reactive({
+    infile <- input$mydatafull
+    if (is.null(infile)) {
+      # User has not uploaded a file yet
+      return(NULL)
+    } else{
+      #read_csv(infile$datapath[4])
+      map(infile$datapath,~read_csv(.x))
+    }
+  })
+
+```
+
+```{r, eval=TRUE}
+renderUI({
+  val_full <- ifelse(is.null(custom_csv_data_full()), 1, map_int(custom_csv_data_full(), ~ncol(.x)) %>% max - 2)
+  radioButtons("custom_nb_matched_full", label = "Select number of thesaurus to be matched", choiceValues = 1:val_full, choiceNames = paste("At least", 1:val_full, "thesaurus matched out of", val_full))
+})
+```
+
+
+```{r, eval=TRUE}
+clean_custom_csv_data_full <- reactive(map(custom_csv_data_full(), ~.x %>%
+                                  mutate(nb_list_matched = rowSums(.[-c(1,2)]), total_list = ncol(.) - 2) %>%
+  filter(interest_lvl >= 0) %>%
+  mutate(interest_lvl = as.factor(interest_lvl)))
+)
+```
+
+Row
+-----------------------------------------------------------------------
+### Articles retrieved mean
+
+```{r}
+mean_retrieved <- reactive(map_int(custom_csv_data_full(), ~nrow(.x)) %>%
+                             mean %>%
+                             floor)
+renderValueBox(
+  valueBox(mean_retrieved(), icon = "fa-comments")
+)
+```
+
+### Matched articles mean
+
+```{r, eval=TRUE}
+mean_custom_matched_articles <- reactive(map(clean_custom_csv_data_full(), ~.x %>%
+                             filter(nb_list_matched >= input$custom_nb_matched_full)))
+#renderPrint(c(map_int(keep(mean_custom_matched_articles(), ~nrow(.x) > 0), ~nrow(.x)) %>%
+ #             mean %>%
+  #            floor, map_int(keep(mean_custom_matched_articles(), ~nrow(.x) > 0), ~nrow(.x))))
+mean_matched <- reactive(map_int(keep(mean_custom_matched_articles(), ~nrow(.x) > 0), ~nrow(.x)) %>%
+              mean %>%
+              floor)
+renderValueBox(
+  valueBox(mean_matched(), icon = "fa-comments")
+)
+```
+
+### Matched articles ratio mean
+
+```{r, eval=TRUE}
+mean_custom_matched_ratio <- reactive(round(100*mean_matched()/mean_retrieved()))
+renderGauge(
+  gauge(mean_custom_matched_ratio(), min = 0, max = 100, symbol = "%", gaugeSectors(
+    succes = c(80, 100), warning = c(31, 79), danger = c(0, 30)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+### Articles matched mean 
+
+```{r, eval=TRUE}
+mean_custom_articles_matched <- reactive(map(clean_custom_csv_data_full(), ~.x %>%
+                             filter(nb_list_matched >= input$custom_nb_matched_full)))
+mean_matched1 <- reactive(map_int(keep(mean_custom_matched_articles(), ~nrow(.x) > 0), ~nrow(.x)) %>%
+              mean %>%
+              floor)
+renderValueBox(
+  valueBox(mean_matched1(), icon = "fa-comments")
+)
+```
+
+### Matched articles liked mean
+
+```{r, eval=TRUE}
+mean_custom_matched_articles_liked <- reactive(map(mean_custom_articles_matched(), ~.x %>%
+                             filter(interest_lvl == 2)))
+mean_matched_liked <- reactive(map_int(keep(mean_custom_matched_articles_liked(), ~nrow(.x) > 0), ~nrow(.x)) %>%
+                                         mean %>%
+                                         floor)
+renderValueBox(
+  valueBox(mean_matched_liked(), icon = "fa-comments", color = "info")
+)
+```
+
+### Matched articles liked ratio mean
+
+```{r, eval=TRUE}
+mean_custom_matched_liked_ratio <- reactive(round(100*mean_matched_liked()/mean_matched1()))
+renderGauge(
+  gauge(mean_custom_matched_liked_ratio(), min = 0, max = 100, symbol = "%", gaugeSectors(
+    success = c(51, 100), warning = c(11, 50), danger = c(0, 10)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+### Articles liked mean
+
+```{r, eval=TRUE}
+mean_custom_articles_liked <- reactive(map(clean_custom_csv_data_full(), ~.x %>%
+  filter(interest_lvl == 2)))
+mean_liked <- reactive(map_int(keep(mean_custom_articles_liked(), ~nrow(.x) > 0),~nrow(.x)) %>%
+                                 mean %>%
+                                 floor)
+renderValueBox(
+  valueBox(mean_liked(), icon = "fa-comments", color = "info")
+)
+```
+
+### Liked articles lost mean
+
+```{r, eval=TRUE}
+mean_custom_liked_article_lost <- reactive(map(mean_custom_articles_liked(), ~.x %>% 
+                                                 filter(nb_list_matched < input$custom_nb_matched_full)))
+mean_liked_lost <- reactive(map_int(keep(mean_custom_liked_article_lost(), ~nrow(.x) > 0), ~nrow(.x)) %>%
+                              mean %>%
+                              floor)
+#renderPrint(map_int(mean_custom_liked_article_lost(), ~nrow(.x)))
+renderValueBox(
+  valueBox(ifelse(!is.na(mean_liked_lost()), mean_liked_lost(), 0), icon = "fa-comments", color = "info")
+)
+```
+
+### Liked articles lost ratio 
+
+```{r, eval=TRUE}
+mean_custom_liked_lost_ratio <- reactive(round(100*mean_liked_lost()/mean_liked()))
+renderGauge(
+  gauge(ifelse(!is.na(mean_custom_liked_lost_ratio()), mean_custom_liked_lost_ratio(), 0), min = 0, max = 100, symbol = "%", gaugeSectors(
+    danger = c(51, 100), warning = c(11, 50), succes = c(0, 10)
+  ))
+)
+```
+
+Row 
+-----------------------------------------------------------------------
+
+```{r, eval=FALSE}
+renderPlot(
+  ggplot(clean_custom_csv_data_full() %>%
+           filter(nb_list_matched >= input$custom_nb_matched_full), aes(x = interest_lvl, fill = interest_lvl)) + geom_bar() + theme_bw() +
+    theme(legend.position = "none") + ylab(NULL) + xlab("Niveau d'intérêt")
+)
+```
